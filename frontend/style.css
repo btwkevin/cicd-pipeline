@@ -1,0 +1,25 @@
+body {
+  background-color: #0a0a0a;
+  color: #ededed;;
+  margin: 40px;
+}
+#bio{
+    text-align: center;
+}
+
+#intro{
+  overflow-wrap: break-word;
+}
+
+li {
+  background-color: #ededed;;
+  border-radius: 10px;
+  transition: transform 0.2s ease;
+  box-shadow: 2px 2px 6px #4787e9;
+}
+li:hover {
+  transform: scale(1.2);
+}
+#box {
+    margin: 100px;
+}
