@@ -33,6 +33,7 @@ jobs:
           cd ~/cicd-pipeline
           rm -rf ~/cicd-pipeline/*
           cp -r ~/app-temp/* ~/cicd-pipeline/
+          rm -rf ~/app-temp
         EOF
 
     - name: Build and restart Docker Compose
