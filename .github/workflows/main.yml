@@ -30,7 +30,7 @@ jobs:
       run: |
         ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
           set -e
-          cd ~/cicd-pipeline
+          mkdir -p ~/cicd-pipeline
           rm -rf ~/cicd-pipeline/*
           cp -r ~/app-temp/* ~/cicd-pipeline/
           rm -rf ~/app-temp
