@@ -22,4 +22,4 @@ const server = http.createServer(async (req, res) => {
         }
     }
 })
-server.listen(8080, () => console.log('server listen : 8080'))
+server.listen({port : 8080}, () => console.log('server listen : 8080'))
