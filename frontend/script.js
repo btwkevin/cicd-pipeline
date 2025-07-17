@@ -1,152 +1,356 @@
-const typingText = document.querySelector(".typing-text")
-const phrases = [
-  "Linux Enthusiast",
-  "Backend Developer",
-  "Home Lab Tinkerer",
-  "System Administrator",
-]
+// Theme Management
+class ThemeManager {
+    constructor() {
+        this.theme = localStorage.getItem('theme') || 'light';
+        this.init();
+    }
 
-let phraseIndex = 0
-let charIndex = 0
-let isDeleting = false
-let typingSpeed = 100
+    init() {
+        this.applyTheme();
+        this.bindEvents();
+    }
 
-function typeWriter() {
-  const currentPhrase = phrases[phraseIndex]
+    applyTheme() {
+        document.documentElement.setAttribute('data-theme', this.theme);
+    }
 
-  if (isDeleting) {
-    typingText.textContent = currentPhrase.substring(0, charIndex - 1)
-    charIndex--
-    typingSpeed = 50
-  } else {
-    typingText.textContent = currentPhrase.substring(0, charIndex + 1)
-    charIndex++
-    typingSpeed = 100
-  }
+    toggleTheme() {
+        this.theme = this.theme === 'light' ? 'dark' : 'light';
+        localStorage.setItem('theme', this.theme);
+        this.applyTheme();
+    }
 
-  if (!isDeleting && charIndex === currentPhrase.length) {
-    setTimeout(() => {
-      isDeleting = true
-    }, 2000)
-  } else if (isDeleting && charIndex === 0) {
-    isDeleting = false
-    phraseIndex = (phraseIndex + 1) % phrases.length
-  }
-
-  setTimeout(typeWriter, typingSpeed)
+    bindEvents() {
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => this.toggleTheme());
+    }
 }
 
-// Start typing animation
-document.addEventListener("DOMContentLoaded", () => {
-  setTimeout(typeWriter, 1000)
-})
-
-// Tooltip functionality
-const skillItems = document.querySelectorAll(".skill-item")
-const tooltip = document.getElementById("tooltip")
-
-skillItems.forEach((item) => {
-  item.addEventListener("mouseenter", (e) => {
-    const tooltipText = item.getAttribute("data-tooltip")
-    tooltip.textContent = tooltipText
-    tooltip.classList.add("show")
-
-    // Position tooltip
-    const rect = item.getBoundingClientRect()
-    const tooltipRect = tooltip.getBoundingClientRect()
-
-    tooltip.style.left = rect.left + rect.width / 2 - tooltipRect.width / 2 + "px"
-    tooltip.style.top = rect.top - tooltipRect.height - 10 + "px"
-  })
-
-  item.addEventListener("mouseleave", () => {
-    tooltip.classList.remove("show")
-  })
-})
-
-// Update tooltip position on mouse move
-document.addEventListener("mousemove", (e) => {
-  if (tooltip.classList.contains("show")) {
-    const hoveredSkill = document.querySelector(".skill-item:hover")
-    if (hoveredSkill) {
-      const rect = hoveredSkill.getBoundingClientRect()
-      const tooltipRect = tooltip.getBoundingClientRect()
-
-      tooltip.style.left = rect.left + rect.width / 2 - tooltipRect.width / 2 + "px"
-      tooltip.style.top = rect.top - tooltipRect.height - 10 + "px"
+// Particle System
+class ParticleSystem {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.particles = [];
+        this.mouse = { x: 0, y: 0 };
+        this.init();
     }
-  }
-})
 
-// Smooth scrolling for any future navigation
-document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-  anchor.addEventListener("click", function (e) {
-    e.preventDefault()
-    const target = document.querySelector(this.getAttribute("href"))
-    if (target) {
-      target.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      })
+    init() {
+        this.resize();
+        this.createParticles();
+        this.bindEvents();
+        this.animate();
     }
-  })
-})
 
-// Add some interactive particles effect (optional)
-function createParticle() {
-  const particle = document.createElement("div")
-  particle.style.position = "fixed"
-  particle.style.width = "2px"
-  particle.style.height = "2px"
-  particle.style.backgroundColor = "var(--accent)"
-  particle.style.borderRadius = "50%"
-  particle.style.pointerEvents = "none"
-  particle.style.opacity = "0.6"
-  particle.style.zIndex = "-1"
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
 
-  particle.style.left = Math.random() * window.innerWidth + "px"
-  particle.style.top = window.innerHeight + "px"
+    createParticles() {
+        const particleCount = Math.min(100, Math.floor(window.innerWidth / 10));
+        
+        for (let i = 0; i < particleCount; i++) {
+            this.particles.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                size: Math.random() * 3 + 1,
+                opacity: Math.random() * 0.5 + 0.2,
+                hue: Math.random() * 60 + 200, // Blue to purple range
+            });
+        }
+    }
 
-  document.body.appendChild(particle)
+    updateParticles() {
+        this.particles.forEach(particle => {
+            particle.x += particle.vx;
+            particle.y += particle.vy;
 
-  const animation = particle.animate(
-    [
-      { transform: "translateY(0px)", opacity: 0.6 },
-      { transform: `translateY(-${window.innerHeight + 100}px)`, opacity: 0 },
-    ],
-    {
-      duration: Math.random() * 3000 + 2000,
-      easing: "linear",
-    },
-  )
+            // Bounce off edges
+            if (particle.x < 0 || particle.x > this.canvas.width) {
+                particle.vx *= -1;
+            }
+            if (particle.y < 0 || particle.y > this.canvas.height) {
+                particle.vy *= -1;
+            }
 
-  animation.onfinish = () => {
-    particle.remove()
-  }
+            // Mouse interaction
+            const dx = this.mouse.x - particle.x;
+            const dy = this.mouse.y - particle.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < 100) {
+                const force = (100 - distance) / 100;
+                particle.vx += dx * force * 0.01;
+                particle.vy += dy * force * 0.01;
+            }
+
+            // Damping
+            particle.vx *= 0.99;
+            particle.vy *= 0.99;
+        });
+    }
+
+    drawParticles() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.particles.forEach((particle, index) => {
+            // Draw particle
+            this.ctx.beginPath();
+            this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            this.ctx.fillStyle = `hsla(${particle.hue}, 70%, 60%, ${particle.opacity})`;
+            this.ctx.fill();
+
+            // Draw connections
+            this.particles.slice(index + 1).forEach(otherParticle => {
+                const dx = particle.x - otherParticle.x;
+                const dy = particle.y - otherParticle.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 120) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(particle.x, particle.y);
+                    this.ctx.lineTo(otherParticle.x, otherParticle.y);
+                    this.ctx.strokeStyle = `hsla(${particle.hue}, 70%, 60%, ${0.1 * (1 - distance / 120)})`;
+                    this.ctx.lineWidth = 0.5;
+                    this.ctx.stroke();
+                }
+            });
+        });
+    }
+
+    animate() {
+        this.updateParticles();
+        this.drawParticles();
+        requestAnimationFrame(() => this.animate());
+    }
+
+    bindEvents() {
+        window.addEventListener('resize', () => {
+            this.resize();
+            this.particles = [];
+            this.createParticles();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            this.mouse.x = e.clientX;
+            this.mouse.y = e.clientY;
+        });
+    }
 }
 
-// Create particles occasionally
-setInterval(createParticle, 3000)
+// Smooth Scrolling
+class SmoothScroll {
+    constructor() {
+        this.bindEvents();
+    }
 
-// Add scroll-based animations
-const observerOptions = {
-  threshold: 0.1,
-  rootMargin: "0px 0px -50px 0px",
+    bindEvents() {
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = document.querySelector(anchor.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    }
 }
 
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (entry.isIntersecting) {
-      entry.target.style.opacity = "1"
-      entry.target.style.transform = "translateY(0)"
+// Intersection Observer for Animations
+class AnimationObserver {
+    constructor() {
+        this.observer = new IntersectionObserver(
+            (entries) => this.handleIntersection(entries),
+            { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+        );
+        this.init();
     }
-  })
-}, observerOptions)
 
-// Observe elements for scroll animations
-document.querySelectorAll(".bio-card, .skills-section").forEach((el) => {
-  el.style.opacity = "0"
-  el.style.transform = "translateY(30px)"
-  el.style.transition = "opacity 0.8s ease, transform 0.8s ease"
-  observer.observe(el)
-})
+    init() {
+        // Observe skill cards for progress bar animation
+        document.querySelectorAll('.skill-card').forEach(card => {
+            this.observer.observe(card);
+        });
+
+        // Observe other animated elements
+        document.querySelectorAll('.project-card, .stat-item').forEach(element => {
+            this.observer.observe(element);
+        });
+    }
+
+    handleIntersection(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate-in');
+                
+                // Animate progress bars
+                const progressBar = entry.target.querySelector('.progress-bar');
+                if (progressBar) {
+                    const progress = progressBar.getAttribute('data-progress');
+                    setTimeout(() => {
+                        progressBar.style.width = `${progress}%`;
+                    }, 200);
+                }
+            }
+        });
+    }
+}
+
+// Contact Form Handler
+class ContactForm {
+    constructor() {
+        this.form = document.getElementById('contactForm');
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        if (this.form) {
+            this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+        }
+    }
+
+    async handleSubmit(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this.form);
+        const data = Object.fromEntries(formData);
+        
+        // Simulate form submission
+        const submitButton = this.form.querySelector('button[type="submit"]');
+        const originalText = submitButton.textContent;
+        
+        submitButton.textContent = 'Sending...';
+        submitButton.disabled = true;
+        
+        // Simulate API call
+        setTimeout(() => {
+            alert('Message sent successfully! I\'ll get back to you soon.');
+            this.form.reset();
+            submitButton.textContent = originalText;
+            submitButton.disabled = false;
+        }, 2000);
+    }
+}
+
+// Floating Elements Animation
+class FloatingAnimation {
+    constructor() {
+        this.elements = document.querySelectorAll('.floating-element');
+        this.init();
+    }
+
+    init() {
+        this.elements.forEach((element, index) => {
+            this.animateElement(element, index);
+        });
+    }
+
+    animateElement(element, index) {
+        const startTime = Date.now() + index * 1000;
+        const baseSpeed = 0.001;
+        const amplitude = 20;
+
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const y = Math.sin(elapsed * baseSpeed) * amplitude;
+            const x = Math.cos(elapsed * baseSpeed * 0.8) * (amplitude * 0.5);
+            const rotation = Math.sin(elapsed * baseSpeed * 0.5) * 5;
+
+            element.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg)`;
+            requestAnimationFrame(animate);
+        };
+
+        animate();
+    }
+}
+
+// Header Scroll Effect
+class HeaderScroll {
+    constructor() {
+        this.header = document.querySelector('.header');
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        let lastScrollY = window.scrollY;
+        
+        window.addEventListener('scroll', () => {
+            const currentScrollY = window.scrollY;
+            
+            if (currentScrollY > 100) {
+                this.header.style.background = 'rgba(248, 250, 252, 0.95)';
+                this.header.style.backdropFilter = 'blur(20px)';
+            } else {
+                this.header.style.background = 'rgba(248, 250, 252, 0.8)';
+                this.header.style.backdropFilter = 'blur(10px)';
+            }
+            
+            // Hide/show header on scroll
+            if (currentScrollY > lastScrollY && currentScrollY > 200) {
+                this.header.style.transform = 'translateY(-100%)';
+            } else {
+                this.header.style.transform = 'translateY(0)';
+            }
+            
+            lastScrollY = currentScrollY;
+        });
+    }
+}
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize all components
+    new ThemeManager();
+    new SmoothScroll();
+    new AnimationObserver();
+    new ContactForm();
+    new FloatingAnimation();
+    new HeaderScroll();
+    
+    // Initialize particle system
+    const canvas = document.getElementById('particleCanvas');
+    if (canvas) {
+        new ParticleSystem(canvas);
+    }
+    
+    // Add some CSS animations via JavaScript
+    const style = document.createElement('style');
+    style.textContent = `
+        .animate-in {
+            animation: slideInUp 0.6s ease forwards;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+});
+
+// Performance optimization
+window.addEventListener('load', () => {
+    // Preload critical resources
+    const criticalImages = [
+        // Add any critical images here
+    ];
+    
+    criticalImages.forEach(src => {
+        const img = new Image();
+        img.src = src;
+    });
+});
