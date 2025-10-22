@@ -2,9 +2,6 @@ name: Build and Deploy to EC2
 
 on:
   push:
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
     branches:
       - main
 
@@ -13,33 +10,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up SSH key
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-    - name: Copy updated code to EC2
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p ~/app-temp"
-        rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/app-temp
+      - name: Copy updated code to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p ~/app-temp"
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/app-temp
 
-    - name: Replace app code on server
-      run: |
-        ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e
-          mkdir -p ~/cicd-pipeline
-          rm -rf ~/cicd-pipeline/*
-          cp -r ~/app-temp/* ~/cicd-pipeline/
-          rm -rf ~/app-temp
-        EOF
+      - name: Replace app code on server
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            mkdir -p ~/cicd-pipeline
+            rm -rf ~/cicd-pipeline/*
+            cp -r ~/app-temp/* ~/cicd-pipeline/
+            rm -rf ~/app-temp
+          EOF
 
-    - name: Build and restart Docker Compose
-      run: |
-        ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          cd ~/cicd-pipeline
-          docker-compose down
-          docker-compose up --build -d
-        EOF
+      - name: Build and restart Docker Compose
+        run: |
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd ~/cicd-pipeline
+            docker-compose down
+            docker-compose up --build -d
+          EOF
