@@ -1,22 +1,24 @@
 
 ---
 
-## 📁 Project Structure
+## 📁 Code Structure
 
 ```
-github-actions/
-├── backend/
-│   └── app.js          
-├── frontend/
+.
+├── backend
+│   └── cmd
+│       └── main.go
+├── deploy
+│   └── nginx.conf
+├── docker-compose.yml
+├── Dockerfile
+├── frontend
 │   ├── index.html
-│   ├── style.css
-│   └── script.js
-├── Dockerfile             
-├── docker-compose.yml  
-├── .dockerignore          
-├── .github/
-│   └── workflows/
-│       └── deploy.yml
+│   ├── script.js
+│   └── style.css
+├── main
+├── Makefile
+└── Readme.md
 ```
 
 ---

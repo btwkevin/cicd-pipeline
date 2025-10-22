@@ -1,5 +1,6 @@
-FROM node
+FROM golang
 WORKDIR /app
 COPY . .
-CMD ["node","backend/app.js"]
+RUN make build
+CMD ["./main"]
 EXPOSE 8080
